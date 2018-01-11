@@ -1,0 +1,649 @@
+2011 spring PL project 1 (OurScheme)
+
+PL OurScheme project for the spring of 2011, Part 1 ("Project 1")
+
+Due : 3/28, 2011 before midnight
+
+  // You are to implement something like the following
+                 
+  // 'exp' is a pointer that points to a linked list data structure;
+  // The linked list data structure results from reading in
+  // the user's input.
+
+  Print 'Welcome to OurScheme!'
+  Print '\n'
+  Print '> '
+
+  repeat
+  
+    ReadSExp(exp);
+    PrintSExp(exp);
+    Print '> '
+    
+  until (OR (user entered '(exit)')
+            (END-OF-FILE encountered)
+        )
+
+  Print '\n'
+  Print 'Thanks for using OurScheme!'
+
+2. Syntax of OurScheme
+
+terminal :
+  LEFT-PAREN       // '('
+  RIGHT-PAREN      // ')'
+  INT              // e.g., '123', '+123', '-123'
+  STRING           // "string's (example)." (strings do not extend across lines)
+  DOT              // '.'
+  FLOAT            // '123.567', '123.', '.567', '+123.4', '-.123'
+  NIL              // 'nil' or '#f', but not 'NIL' nor 'nIL'
+  T                // 't' or '#t', but not 'T' nor '#T'
+  QUOTE            // '
+  SYMBOL           // a consecutive sequence of printable characters that are
+                   // not numbers, and do not contain '(', ')', single-quote,
+                   // double-quote and white-spaces ; 
+                   // Symbols are case-sensitive 
+                   // (i.e., uppercase and lowercase are different);
+
+Note :
+
+  With the exception of strings, token are separated by the following "separators" :
+    (a) one or more white-spaces
+    (b) '('                               (note : '(' is a token by itself)
+    (c) ')'                               (note : ')' is a token by itself)
+    (d) the single-quote character (')    (note : it is a token by itself)
+    (e) the double-quote character (")    (note : it starts a STRING)
+
+Examples :
+
+  '3.25' is a FLOAT.
+  '3.25a' is a SYMBOL.
+  'a.b' is a SYMBOL.
+  '#f' is NIL
+  '#fa' (alternatively, 'a#f') is a SYMBOL.
+
+Note :
+
+  '.' can mean several things : 
+    it is either part of a FLOAT or part of a SYMBOL or a DOT.
+    
+  It means a DOT only when it "stands alone".
+  
+  '#' can also mean two things :
+    it is either part of NIL (or T) or part of a SYMBOL.
+  
+  It is part of NIL (or T) only when it is '#t' or '#f' that "stand alone".
+  
+<S-exp> ::= <ATOM> 
+            | LEFT-PAREN <S-exp> { <S-exp> } [ DOT <S-exp> ] RIGHT-PAREN
+            | QUOTE <S-exp>
+            
+<ATOM>  ::= SYMBOL | INT | FLOAT | STRING 
+            | NIL | T | LEFT-PAREN RIGHT-PAREN
+
+Once the attempt to read in an S-expression fails, the line 
+containing the error-char is ignored.  Start to read in an 
+S-expression from the next input line.
+
+Note : a quoted S-expression '... is the same as (quote ...)
+
+   a. In C, the basic program building block is a statement.
+      In OurScheme, the basic program building block is 
+      an S-expression (S-exp, for short).
+      
+   b. An S-exp is either an atom, a list, or a dotted pair.
+   
+   c. An atom is either an integer (e.g., 123), a float
+      (e.g., 12.34 or 12. or .34), a string (e.g., "Hi, there!"), 
+      or a symbol (e.g., abc).
+      
+   d. Abc, abc, aBc, a-B!c?, !??, t, nil are examples of symbols
+   
+      // Blanks and line-returns ("white-space characters") are 
+      // considered delimiters
+      
+      // Upper case and lower case are different, e.g., aB, AB, Ab,
+      // ab are all different symbols.
+      
+      // Each symbol may or may not be bound to an S-exp.
+      
+      // When I say that a symbol abc is bound to the S-exp
+      // (abc "Hi there" (5 3)),
+      // you could take what I mean to be that the "value" of abc
+      // is (abc "Hi there" (5 3)).
+      
+      // "Binding" (rather than "value") is a better way of saying 
+      // what the situation really is.  
+      
+      // t, nil are two system-defined symbols 
+      //   (t for "true" and nil for "false")
+      // They cannot be bound to any S-exp (i.e., they cannot be 
+      // treated like user-defined symbols and cannot have values).
+      
+      // t is also written as #t, meaning "true"
+      // nil is also written as () or #f, meaning "false"
+      // In other word,
+      //   these two are the same : t   #t
+      //   these three are the same : nil   #f   ()
+      
+      // OurScheme understands both 't' and '#t', but it only prints '#t'
+      // OurScheme understands all these three : 'nil', '#f', '()',
+      //   but it only prints 'nil'.     
+      
+      // Side remark :
+      //   (True) Scheme uses #t, #f and ()
+      //   "Other Lisps" use t, nil and ()
+      
+   e. An 「S-exp sequence」 is of the form
+         S1 S2 S3 ... Sn
+      where each Si is an S-exp.
+      // e.g., (1) 1 (1 . 1)
+      // e.g., 1 2 (3 4 (5))
+      // Each of the above S-exp sequence contains three S-exp
+
+   f. A dotted pair is of the form
+        (SS1 . S2)
+      where S2 is an S-exp, whereas SS1 is an 「S-exp sequence」.
+      // Note that there is a dot between SS1 and S2,
+      //      with one or more spaces in between
+      // e.g., (1 . 2)
+      // e.g., (1  2  3  4  . 5)
+      // e.g., (1  2  3  4  . ())
+      // e.g., (1 . (2 . (3 . abc)))
+      // e.g., (1 2 3 . abc)
+      // e.g., ((1) (2 (3)) . (abc))
+      // e.g., ((1) (2 (3)) . (nil))
+      // e.g., ((1) (2 (3)) . nil)
+      
+   g. The following notations of dotted pairs are equivalent.
+      
+      (S1 S2 S3 S4 . S5)
+      (S1 . (S2 . (S3 . (S4 . S5))))
+      
+   h. Comment :
+      What we refer to as a "dotted pair" is different from what
+      other professionals refer to as a "dotted pair".
+      
+      What other professionals mean by a dotted pair is just
+      (S1 . S2), where S1 and S2 are S-exp.
+      
+   i. A list is of the form
+        (SS1)
+      where SS1 is an 「S-exp sequence」.
+      // Note : () is known as "the empty list"
+      // For historical reasons, () is defined to be the same
+      //   as nil or #f, meaning "false"
+      
+   j. A list (S1 S2 ... Sn) is actually a short-handed
+      notation for the following dotted pair
+        (S1 . (S2 . (...(Sn . nil)))...)))
+      In other words, a list is actually a special kind of
+      dotted pair.
+      
+      Another way of writing the list (S1 S2 ... Sn) is
+        (S1 S2 ... Sn . nil)
+        
+      // In other word, there are three (seven?) ways for writing
+      // the same list.
+      //   (S1 S2 S3 S4 S5)
+      //   (S1 . (S2 . (S3 . (S4 . (S5 . nil)))))
+      //   (S1 . (S2 . (S3 . (S4 . (S5 . #f )))))
+      //   (S1 . (S2 . (S3 . (S4 . (S5 . () )))))
+      //   (S1 S2 S3 S4 S5 . nil)
+      //   (S1 S2 S3 S4 S5 . #f)
+      //   (S1 S2 S3 S4 S5 . ())
+        
+   k. When the system prints out a dotted pair, it
+      always tries to print it in list-like format.
+      
+      For example, if the dotted pair is
+        (1 . (2 . (3 . (4 . 5))))
+      Then the system prints it as
+        (1 2 3 4 . 5)
+        
+      But if the dotted pair is
+        (1 . (2 . (3 . (4 . nil))))
+      The system does not print it as
+        (1 2 3 4 . nil)
+      Instead, the system prints it as
+        (1 2 3 4)
+   
+   l. Line comments
+   
+   A line comment begins with ';' until the end-of-line.
+   This ';' must be such that either it is the very first 
+   character of the line or there is a separater preceding this ';'
+   on this line. 
+   
+   (Therefore, for example, 'ab;b' is a symbol,
+    while 'ab ;b' is the symbol 'ab' followed by a 
+    line comment that starts with ';b'.)
+        
+3. Here are some examples of what your program should
+   do for project 1. (The following assumes that your program
+   runs interactively.)
+
+Welcome to OurScheme!
+
+> (1 . (2 . (3 . 4)))
+( 1
+  2
+  3
+  .
+  4
+)
+
+> (1 . (2 . (3 . nil)))
+( 1
+  2
+  3
+)
+
+> (1 . (2 . (3 . ())))
+( 1
+  2
+  3
+)
+
+> (1 . (2 . (3 . #f)))
+( 1
+  2
+  3
+)
+
+> a
+a
+
+> t
+#t
+
+> #t
+#t
+
+> nil
+nil
+
+> ()
+nil
+
+> #f
+nil
+
+> (t () . (1 2 3))
+( #t
+  nil
+  1
+  2
+  3
+)
+
+> (t . nil . (1 2 3))
+ERROR (unexpected character) : line 1 column 11 character ' '
+
+> ((1 2 3) . (4 . (5 . nil)))
+( ( 1
+    2
+    3
+  )
+  4
+  5
+)
+
+> ((1 2 3) . (4 . (5 . ())))
+( ( 1
+    2
+    3
+  )
+  4
+  5
+)
+
+> (12.5       . (4 . 5))
+( 12.500
+  4
+  .
+  5
+)
+
+> (10 12.())   ; same as : ( 10 12. () )
+( 10
+  12.000
+  nil
+)
+
+> (10 ().125)   ; same as : ( 10 () .125 )
+( 10
+  nil
+  0.125
+)
+
+> ( 1 2.5)
+( 1
+  2.500
+)
+
+> ( 1 2.a)
+( 1
+  2.a
+)
+
+> (1 2.25.5.a)
+( 1
+  2.25.5.a
+)
+
+> (12 (    . 3))
+ERROR (unexpected character) : line 1 column 11 character ' '
+
+> "Hi"
+"Hi"
+
+> "(1 . 2   . 3)"
+"(1 . 2   . 3)"
+
+> (((1 . 2) 
+    . ((3 4) 
+       . 
+       (5 . 6)
+      )
+   ) 
+   . (7 . 8)
+  )
+( ( ( 1
+      .
+      2
+    )
+    ( 3
+      4
+    )
+    5
+    .
+    6
+  )
+  7
+  .
+  8
+)
+
+> ())
+nil
+
+> ERROR (unexpected character) : line 1 column 1 character ')'
+
+> (Hi there ! How are you ?)
+( Hi
+  there
+  !
+  How
+  are
+  you
+  ?
+)
+
+> (Hi there! How are you?)
+( Hi
+  there!
+  How
+  are
+  you?
+)
+
+> (Hi! (How about using . (Lisp (instead of . C?))))
+( Hi!
+  ( How
+    about
+    using
+    Lisp
+    ( instead
+      of
+      .
+      C?
+    )
+  )
+)
+
+> (Hi there) (How are you)
+( Hi
+  there
+)
+
+> ( How
+  are
+  you
+)
+         
+> (Hi
+           .
+           (there  .(     ; note that there may be no space between
+                          ; '.' and '('
+           How is it going?))
+           )
+( Hi
+  there
+  How
+  is
+  it
+  going?
+)
+
+> ; Note : We have just introduced the use of comments.
+  ; ';' starts a comment until the end of line.
+  ; A comment is something that ReadSExp() should skip when 
+  ; reading in an S-expression.
+  
+(1 2 3) )
+( 1
+  2
+  3
+)
+
+> ERROR (unexpected character) : line 1 column 2 character ')'
+
+> (1 2 
+   3) (4 5
+( 1
+  2
+  3
+)
+
+>       6)
+( 4
+  5
+  6
+)
+
+>        '(Hi
+           .
+           (there  .(     ; note that there may be no space between
+                          ; '.' and '('
+           How is it going?))
+           )
+( quote 
+  ( Hi
+    there
+    How
+    is
+    it
+    going?
+  )
+)
+
+>'(1 2 3) )
+( quote
+  ( 1
+    2
+    3
+  )
+)
+
+> ERROR (unexpected character) : line 1 column 2 character ')'
+
+> '(1 2 3) .25
+( quote
+  ( 1
+    2
+    3
+  )
+)
+
+> 0.250
+
+> (exit  ; as of now, your system only understands 'exit' ;
+      )  ; and the program terminates when it sees '(exit)'
+
+Thanks for using OurScheme!
+
+// =================== Q and A No. 1 =======================
+
+Question : '(1 2 3)的output應該是什麼？
+
+Answer :
+
+Project 1 :
+
+> '(1 2 3)
+( quote
+  ( 1
+    2
+    3
+  )
+)
+
+
+Project 2 :
+
+> '(1 2 3)
+( 1
+  2
+  3
+)
+
+解釋：
+
+Project 1只讀進來(建出DS)、不evaluate就直接(把DS)印出去，
+所以得 : (quote (1 2 3))。
+
+Project 2是讀進來(建出DS)、evaluate(此DS)、再把evaluate的result
+(依舊是個DS)印出去，所以得 : (1 2 3)。
+
+(將'(quote (1 2 3))'予以evaluate所得的結果是'(1 2 3)')
+
+// =================== Q and A No. 2 =======================
+
+※ 引述《...》之銘言：
+
+> 請問老大~~
+
+> 1.當輸入'> .'時，會是ERROR嗎???
+>   若是是ERROR.msg：會是column: 1 or 2 ???
+
+   It is an error.  (Let us suppose that it is '> .$', where '$' is
+   LINE-ENTER char.)
+
+   column : 2   '.' is the very first user input char
+                on this line.  (the space before it is system output)
+
+   Why column 2 and not column 1? Please see my answer to your second
+
+   question below. (The system detects an error when it sees the LINE-
+
+   ENTER char.)
+
+> 2.在測試數據中有輸入(12.5)(12(. 3))
+
+> 答案是:
+
+> > ( 12.500
+> )
+> > ERROR (unexpected character) : line 1 column 6 character ' '
+
+> 但是在OurScheme中
+
+> > (12 (    . 3))
+> ERROR (unexpected character) : line 1 column 10 character '.'
+
+> 之前的input是'.'錯，現在的input則是' '錯，為什麼呢???
+
+In the case of (the first one) '(12(. 3))', everything is still
+
+OK when the system (i.e., your system) "sees" '.'.  Why?  Because '.'
+
+may be followed by a digit such as '5'.  The system detects an error
+
+only when it sees that there is a space following '.'.  Therefore, the
+
+"error char" (the char that caused the error) is the space and not the '.'
+
+
+In the case of (the second one) '(12 (    . 3))', the error char should
+
+also be the space-char following that '.'   You just found an error in my
+
+Project 1 handout.  Thank you.  (And I have taken the liberty to
+
+correct this error in both OurSchemeProj1.txt and HowToWriteOurScheme.doc)
+
+
+> 3.請問abc"abc會印出什麼呢???
+
+  The first token is 'abc'. The second token is a string that starts
+
+  with : "abc
+
+  e.g., // for project 1
+
+  > abc"abc   "
+  abc
+
+  > "abc   "
+
+→ yabuki 推：老大那abc'abc算是symbol嗎?還是會有其他結果?        03/09 22:27
+→ hsia 推：the case of abc'abc similar to the above case,       03/10 08:57
+→ hsia 推：because single-quote, double-quote R separators      03/10 08:58
+
+// =================== Q and A No. 3 =======================
+
+※ 引述《...》之銘言：
+
+> 這問題困擾很久百思不得其解。
+
+>
+> 依題意應該是最後一個可以執行（或印出）的Token後將行號和欄位初始化
+> 範例如下
+
+> ()   )
+>  ^這玩意兒是最後的token，所以要印出在line 1錯
+
+> 問題來了：
+> "最後一個字串"\n
+> \n
+>   \n
+> "出錯點
+
+> 為什麼這裡印line 3？把最後一個字串token拿掉後應該如下
+> \n　　　　　　　　　　　　　　１
+> \n                            ２
+>   \n                          ３
+> "出錯點                     第４行
+> ---------------
+
+> "最後一個字串"　　　　　　\n　１
+> \n                            ２
+>   \n                          ３
+> "出錯點                       ４
+
+> 加了空白為什麼也是line 3？
+
+這沒什麼好百思不得其解的。 這是規劃時的思緒不夠細密。
+
+的確，嚴格來講、按照規定、最後一個case的error應是第四行、而非第三行。
+
+當初規劃時未考慮到「在legal input之後若還有(也只有)space怎麼算下一input的行數」
+
+的問題。
+
+不過，你就當這case是「general規定」的exception吧，意即：
+
+  在legal input之後(同一行)要出現「非space非tab字元」才把這一行
+  算作是下一input的第一行。  若legal input之後(同一行)只出現
+ 「space或tab字元」，那這一行就不算作是下一input的第一行。

@@ -1,0 +1,191 @@
+Syntax of OurScheme
+
+terminal :
+  LEFT-PAREN       // '('
+  RIGHT-PAREN      // ')'
+  INT              // e.g., '123', '+123', '-123'
+  STRING           // "string's (example)." (strings do not extend across lines)
+  DOT              // '.'
+  FLOAT            // '123.567', '123.', '.567', '+123.4', '-.123'
+  NIL              // 'nil' or '#f', but not 'NIL' nor 'nIL'
+  T                // 't' or '#t', but not 'T' nor '#T'
+  QUOTE            // '
+  SYMBOL           // a consecutive sequence of printable characters that are
+                   // not numbers, and do not contain '(', ')', single-quote,
+                   // double-quote and white-spaces ; 
+                   // Symbols are case-sensitive 
+                   // (i.e., uppercase and lowercase are different);
+
+Note :
+
+  With the exception of strings, token are separated by the following "separators" :
+    (a) one or more white-spaces
+    (b) '('                               (note : '(' is a token by itself)
+    (c) ')'                               (note : ')' is a token by itself)
+    (d) the single-quote character (')    (note : it is a token by itself)
+    (e) the double-quote character (")    (note : it starts a STRING)
+
+Examples :
+
+  '3.25' is a FLOAT.
+  '3.25a' is a SYMBOL.
+  'a.b' is a SYMBOL.
+  '#f' is NIL
+  '#fa' (alternatively, 'a#f') is a SYMBOL.
+
+Note :
+
+  '.' can mean several things : 
+    it is either part of a FLOAT or part of a SYMBOL or a DOT.
+    
+  It means a DOT only when it "stands alone".
+  
+  '#' can also mean two things :
+    it is either part of NIL (or T) or part of a SYMBOL.
+  
+  It is part of NIL (or T) only when it is '#t' or '#f' that "stand alone".
+  
+<S-exp> ::= <ATOM> 
+            | LEFT-PAREN <S-exp> { <S-exp> } [ DOT <S-exp> ] RIGHT-PAREN
+            | QUOTE <S-exp>
+            
+<ATOM>  ::= SYMBOL | INT | FLOAT | STRING 
+            | NIL | T | LEFT-PAREN RIGHT-PAREN
+
+Once the attempt to read in an S-expression fails, the line 
+containing the error-char is ignored.  Start to read in an 
+S-expression from the next input line.
+
+Note : a quoted S-expression '... is the same as (quote ...)
+
+   a. In C, the basic program building block is a statement.
+      In OurScheme, the basic program building block is 
+      an S-expression (S-exp, for short).
+      
+   b. An S-exp is either an atom, a list, or a dotted pair.
+   
+   c. An atom is either an integer (e.g., 123), a float
+      (e.g., 12.34 or 12. or .34), a string (e.g., "Hi, there!"), 
+      or a symbol (e.g., abc).
+      
+   d. Abc, abc, aBc, a-B!c?, !??, t, nil are examples of symbols
+   
+      // Blanks and line-returns ("white-space characters") are 
+      // considered delimiters
+      
+      // Upper case and lower case are different, e.g., aB, AB, Ab,
+      // ab are all different symbols.
+      
+      // Each symbol may or may not be bound to an S-exp.
+      
+      // When I say that a symbol abc is bound to the S-exp
+      // (abc "Hi there" (5 3)),
+      // you could take what I mean to be that the "value" of abc
+      // is (abc "Hi there" (5 3)).
+      
+      // "Binding" (rather than "value") is a better way of saying 
+      // what the situation really is.  
+      
+      // t, nil are two system-defined symbols 
+      //   (t for "true" and nil for "false")
+      // They cannot be bound to any S-exp (i.e., they cannot be 
+      // treated like user-defined symbols and cannot have values).
+      
+      // t is also written as #t, meaning "true"
+      // nil is also written as () or #f, meaning "false"
+      // In other word,
+      //   these two are the same : t   #t
+      //   these three are the same : nil   #f   ()
+      
+      // OurScheme understands both 't' and '#t', but it only prints '#t'
+      // OurScheme understands all these three : 'nil', '#f', '()',
+      //   but it only prints 'nil'.     
+      
+      // Side remark :
+      //   (True) Scheme uses #t, #f and ()
+      //   "Other Lisps" use t, nil and ()
+      
+   e. An ¡uS-exp sequence¡v is of the form
+         S1 S2 S3 ... Sn
+      where each Si is an S-exp.
+      // e.g., (1) 1 (1 . 1)
+      // e.g., 1 2 (3 4 (5))
+      // Each of the above S-exp sequence contains three S-exp
+
+   f. A dotted pair is of the form
+        (SS1 . S2)
+      where S2 is an S-exp, whereas SS1 is an ¡uS-exp sequence¡v.
+      // Note that there is a dot between SS1 and S2,
+      //      with one or more spaces in between
+      // e.g., (1 . 2)
+      // e.g., (1  2  3  4  . 5)
+      // e.g., (1  2  3  4  . ())
+      // e.g., (1 . (2 . (3 . abc)))
+      // e.g., (1 2 3 . abc)
+      // e.g., ((1) (2 (3)) . (abc))
+      // e.g., ((1) (2 (3)) . (nil))
+      // e.g., ((1) (2 (3)) . nil)
+      
+   g. The following notations of dotted pairs are equivalent.
+      
+      (S1 S2 S3 S4 . S5)
+      (S1 . (S2 . (S3 . (S4 . S5))))
+      
+   h. Comment :
+      What we refer to as a "dotted pair" is different from what
+      other professionals refer to as a "dotted pair".
+      
+      What other professionals mean by a dotted pair is just
+      (S1 . S2), where S1 and S2 are S-exp.
+      
+   i. A list is of the form
+        (SS1)
+      where SS1 is an ¡uS-exp sequence¡v.
+      // Note : () is known as "the empty list"
+      // For historical reasons, () is defined to be the same
+      //   as nil or #f, meaning "false"
+      
+   j. A list (S1 S2 ... Sn) is actually a short-handed
+      notation for the following dotted pair
+        (S1 . (S2 . (...(Sn . nil)))...)))
+      In other words, a list is actually a special kind of
+      dotted pair.
+      
+      Another way of writing the list (S1 S2 ... Sn) is
+        (S1 S2 ... Sn . nil)
+        
+      // In other word, there are three (seven?) ways for writing
+      // the same list.
+      //   (S1 S2 S3 S4 S5)
+      //   (S1 . (S2 . (S3 . (S4 . (S5 . nil)))))
+      //   (S1 . (S2 . (S3 . (S4 . (S5 . #f )))))
+      //   (S1 . (S2 . (S3 . (S4 . (S5 . () )))))
+      //   (S1 S2 S3 S4 S5 . nil)
+      //   (S1 S2 S3 S4 S5 . #f)
+      //   (S1 S2 S3 S4 S5 . ())
+        
+   k. When the system prints out a dotted pair, it
+      always tries to print it in list-like format.
+      
+      For example, if the dotted pair is
+        (1 . (2 . (3 . (4 . 5))))
+      Then the system prints it as
+        (1 2 3 4 . 5)
+        
+      But if the dotted pair is
+        (1 . (2 . (3 . (4 . nil))))
+      The system does not print it as
+        (1 2 3 4 . nil)
+      Instead, the system prints it as
+        (1 2 3 4)
+   
+   l. Line comments
+   
+   A line comment begins with ';' until the end-of-line.
+   This ';' must be such that either it is the very first 
+   character of the line or there is a separater preceding this ';'
+   on this line. 
+   
+   (Therefore, for example, 'ab;b' is a symbol,
+    while 'ab ;b' is the symbol 'ab' followed by a 
+    line comment that starts with ';b'.)

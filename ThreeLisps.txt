@@ -1,0 +1,65 @@
+// ===========================================================================
+
+三個Lisp dialects的比較
+
+Emacs Lisp vs. Petite Chez Scheme vs. OurScheme
+
+// =============================================================
+
+GNU Emacs
+  http://ftp.gnu.org/pub/gnu/emacs/windows/
+  emacs-22.3-bin-i386.zip         06-Sep-2008 23:11   37M
+
+// Emacs 另有 http://ftp.tw.xemacs.org/Unix/Editors/XEmacs/stable/
+//            (mirror of : http://www.xemacs.org/Download/win32)
+
+Petite Chez Scheme Version 7.4
+  http://www.scheme.com/download/pcsv74.exe
+
+// Scheme 另有 http://www.gnu.org/software/mit-scheme/      (MIT/GNU Scheme)
+// Windows binary   x86   Windows installation  Compiled on Windows XP 
+//                                              using Open Watcom C/C++ 1.7a. 
+// // 應是經由修改GNU Emacs Lisp而來
+
+OurScheme
+  你正在製作
+  
+// =============================================================
+
+使用GNU Emacs Lisp :
+
+  Start Emacs | 'Buffers' | '*scratch*' | Type '(cons 2 3)' | Ctrl-j
+  | Type '(CONS 2 3)' | Ctrl-j | 'q' // 其餘請自行摸索
+  
+  註： Ctrl-x 1 可將「多重buffer顯示」改為「單一buffer顯示」 
+       // 那'1'不是L; 先Ctrl-x再1
+
+使用Petite Chez Scheme :
+
+  無須介紹
+  
+  註： 'Petite Chez Scheme'是DOS介面，'SWL'是視窗介面，推荐用後者。
+  註： 可用'(exit)'離開系統
+
+使用MIT/GNU Scheme :
+
+  類似GNU Emacs Lisp，但不太好用，沒有Ctrl-j，要用Ctrl-x Ctrl-e。
+  而且'(exit)'只是把default的'*scheme*' buffer殺掉，無法關系統。
+
+// =============================================================
+
+Emacs Lisp : 大小寫有差
+
+  有 'nil' (必須全小寫)，有 't' (必須小寫)， 有 '()'。           // 沒有'f'
+  'nil'與'()'是同意義，但系統自己從不印'()'(只印'nil')。
+
+Petite Chez Scheme (與MIT/GNU Scheme) : 大小寫無差
+
+  有 '#t' (大小寫皆可) 有 '#f' (大小寫皆可) 有 '()'。            // 沒有'nil'
+  這三者的意義完全不同(包括：'#f'與'()'與不同)。
+
+OurScheme : 大小寫有差
+
+  有'#t'有't'有'#f'有'nil'(都必須小寫)有'()'。                   // 沒有'f'
+  'nil'與'()'與'#f'是同意義，但系統自己從不印'()'、也不印'#f'(只印'nil')。
+  '#t'與't'是同意義，但系統自己從不印't'(只印'#t')。

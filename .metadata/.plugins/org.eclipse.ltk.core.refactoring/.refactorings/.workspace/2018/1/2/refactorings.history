@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename Java project &apos;Lisp&apos; to &apos;Lisp_OurScheme&apos;&#x0D;&#x0A;- Original element: &apos;Lisp&apos;&#x0D;&#x0A;- Renamed element: &apos;Lisp&apos;&#x0D;&#x0A;- Update references to refactored element" description="Rename Java project &apos;Lisp&apos;" flags="7" id="org.eclipse.jdt.ui.rename.java.project" input="=Lisp" name="Lisp_OurScheme" references="true" stamp="1515657034570" version="1.0"/>
+</session>

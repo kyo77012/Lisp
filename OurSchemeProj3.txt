@@ -1,0 +1,356 @@
+2011 spring PL project 3 (OurScheme)
+
+PL OurScheme project for the spring of 2011, Part 3 ("Project 3")
+
+Due : 5/31, 2011(Tuesday) before midnight
+
+==================================================================
+
+For this project, you need to extend EvalSExp(), so that it is capable of
+evaluating user-defined functions.
+
+In order to do so, you must first extend your implementation of DEFINE, so
+that the user can define a function before he/she calls such a function.
+
+You also need to allow the creation and use of "local definitions" via the
+use of the 'let' construct.
+
+The use of "nameless functions" (via the use 'lambda') should also be allowed.
+
+Below, we describe the syntax of 'lambda', 'let' and 'define'.
+
+==================================================================
+
+Please also see HowToWriteOurScheme.doc (Latest modification : 05/11, 2011).
+
+==================================================================
+
+※ let
+
+  'let' is the name of a function.  Its syntax is :
+  
+    ( let ( ... ) ......... )
+  
+  where 
+  
+  (a) '...' is a sequence of S-expressions, with each S-expression being 
+      of the form
+  
+          ( SYMBOL S-expression )
+  
+  (b) '.........' is a non-empty (!!!) sequence of S-expressions.
+  
+  'let' has at least two parameters.
+  
+  Its first argument is a list of zero or more pairs, where each pair
+  
+  must be of the form : ( SYMBOL S-expression)
+  
+  The working of 'let' is as follows :
+  
+  ＊ The '...' part defines local symbols with bindings.
+  
+     e.g., 
+     
+     if '( ... )' is
+     
+       ( ( x 5 ) 
+         ( y '(1 2 3))
+       )
+     
+     then
+     
+       two local symbols 'x' and 'y' are defined
+       AND
+       'x' is bound to the atom 5, while 'y' is bound to the list (1 2 3).
+  
+  ＊ The '.........' are normal S-expressions.  These S-expressions
+     are such that
+     
+     (i) The "LET-defined" local variables (i.e., 'x' and 'y') can appear 
+         in these S-expressions, and the system knows what their bindings
+         are.
+         
+     (ii) The evaluated result of the last S-expression in '.........'
+          is taken to be the evaluated result of the entire LET expression.
+  
+  Example :
+  
+  > (clean-environment)
+  environment cleaned
+  
+  > ( let ( (x 3) (y '(1 2 3))
+          )
+          (cons 1 '(4 5))       ; this will be evaluated ; but no use
+          (cons x (cdr y))      ; the value of this one is the value of LET
+    )
+  ( 3
+    2
+    3
+  )
+  
+  > x
+  ERROR (unbound symbol) : x 
+
+  If there is anything syntactically wrong with the syntax of 'let',
+  the system should print : ERROR (let format)
+  
+  Example :
+  
+  > (let (car '(1 2 3))  ; first argument of 'let' should be a list of pairs 
+                         ; moreover, there ought to be a second argument
+    )
+  ERROR (let format)
+  
+  > (let ((x 3 4)) 5     ; first argument of LET should be a list of
+                         ; pairs ; '(x 3 4)' is not an acceptable pair
+    )
+  ERROR (let format)
+  
+  > (let ((x 3)
+         ) 
+         5     
+    )
+  5
+  
+  > (let ( ( (car '(x y z)) ; first argument of LET should be a list of pairs
+             3              
+           )                ; Furthermore, the first element of each 
+         )                  ; pair must be a symbol
+         5
+    )
+  ERROR (let format)
+           
+  
+  > (let ()             ; There should be at least one S-expression following
+                        ; the first argument
+    )                   
+  ERROR (let format)
+  
+  > (let () 5           
+    )
+  5
+  
+  > (let ( ( ( car '(x y z)) 
+             5
+           )
+         )        
+    )
+  ERROR (let format)
+  
+  > (let ( ( x (cons 5) ) ; the problem is not in LET-format
+         )
+         ( + x x )
+    )
+  ERROR (incorrect number of arguments) : cons
+  
+  > (let ( ( x (cons 5) ) 
+         )
+    )
+  ERROR (let format)
+  
+  > (let ((x (1 2 3))) 5)  ; LET-format OK
+  ERROR (attempt to apply non-function) : 1
+  
+  > (let ((x (1 2 3))
+         )
+    )
+  ERROR (let format)  
+
+※ lambda
+
+   The syntax of 'lambda' is :
+   
+     ( lambda ( zero-or-more-symbols ) one-or-more-S-expressions )
+   
+   A lambda expression defines a (nameless) function.
+   
+   It has two or more parameters.
+   
+   The first argument is a list of zero-or-more-symbols (these symbols
+   
+   are the arguments of the function being defined by the lambda expression).
+   
+   The one-or-more-S-expressions constitute the function's body.
+   
+   Example :
+   
+   > (clean-enviornment)
+   environment cleaned
+   
+   > ( lambda )
+   ERROR (lambda format)
+   
+   > ( lambda x )   
+   ERROR (lambda format)
+   
+   > ( lambda x y z )
+   ERROR (lambda format)
+   
+   > ( lambda (x) y z       ; the evaluation of a lambda expression
+                            ; produces an internal representation of a 
+     )                      ; function
+   #function
+   
+   > ( lambda (x) )
+   ERROR (lambda format)
+   
+   > ( lambda () y )
+   #function
+   
+   > ( lambda (5) y )
+   ERROR (lambda format)
+   
+   > ( lambda () 5 )
+   #function
+   
+   > ( lambda () () )
+   #function
+   
+   > ( lambda () )
+   ERROR (lambda format)
+   
+   > ( lambda () (+ c 5)
+     )
+   #function
+  
+   > ( ( lambda () (+ c 5)  ; first, the internal representation of a function
+       )                    ; is produced ; this internal representation
+                            ; is "the evaluated result of the first argument"
+                            ; once the binding of the first argument (of
+                            ; the top-level list) is obtained and found
+                            ; to be a function, that function is applied ;
+     )
+   ERROR (unbound symbol) : c
+   
+   > ( ( lambda () (+ 5 5) (+ 5 6) 
+       )
+     )
+   11
+   
+   > ( ( lambda () (+ 5 5) (+ c 6)
+       )
+       8
+     )
+   ERROR (incorrect number of arguments) : lambda expression
+   
+※ define
+
+   The syntax of 'define' is :
+   
+     ( define SYMBOL S-expression )
+   
+   OR
+   
+     ( define ( SYMBOL zero-or-more-symbols ) one-or-more-S-expressions )
+   
+   Moreover, a DEFINE-expression must appear at the top-level (i.e., it 
+   cannot be an "inner" expression).
+   
+   The first define-expression defines the binding of a symbol.  We have
+   seen how this define-expression can be used in the previous projects.
+   With a proper use of the lambda-expressions, we can also define functions
+   using the first define-expression.
+   
+   The second define-expression is only used for defining functions.
+   
+   Example :
+   
+   > (clean-environment)
+   environment cleaned
+   
+   > ( define a 2 )
+   a defined
+   
+   > ( define f ( lambda (x) (+ x x c) ; the binding of 'f' is defined
+                )                      ; to be the internal representation
+     )                                 ; of a function
+   f defined
+   
+   > f
+   #function
+   
+   > (f 1 2 3)
+   ERROR (incorrect number of arguments) : f
+   
+   > (f a)
+   ERROR (unbound symbol) : c
+   
+   > (f b)
+   ERROR (unbound symbol) : b
+   
+   > ( define c 10 )
+   c defined
+   
+   > (f a)
+   14
+  
+   > ( define ( g x ) (h x x) )
+   g defined
+   
+   > g
+   #function
+   
+   > (g 3)
+   ERROR (unbound symbol) : h
+   
+   > ( define ( k x ) (h z z) )
+   k defined
+   
+   > (k w)
+   ERROR (unbound symbol) : w
+   
+   > (k c)
+   ERROR (unbound symbol) : h
+   
+   > (define (h x y) (+ x 20 a))
+   h defined
+   
+   > (g c)
+   32
+   
+   > ( define (h x y) )
+   ERROR (define format)
+   
+   > ( define x 10 20 )
+   ERROR (define format)
+
+   > ( define x 300 )   ; 'x' is a "global"
+   x defined
+   
+   > (g c)              ; global x != parameter x
+   32
+
+   > (define cadr (lambda (x) (car (cdr x))))
+   cadr defined
+   
+   > cadr
+   #function
+   
+   > (cadr '(1 2 3 4))
+   2
+   
+   > (define (cadr x) ( (lambda (x) (car (cdr x))) 
+                        x
+                      )
+     )
+   cadr defined
+   
+   > (cadr '(1 2 3 4))
+   2
+   
+   > cadr
+   #function
+   
+   > cons
+   #function
+
+==================================================================
+
+「Proj. 3」的題目安排
+
+  與「Proj. 2」的題目的安排類似。前五題無error，第五題的隱藏數據
+  是前四題的隱藏數據的"加總"，第十題的狀況也一樣。
+
+Project 3預計於本週日或以前上線。
+    

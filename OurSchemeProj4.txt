@@ -1,0 +1,689 @@
+2013 spring PL project 4 (OurScheme)
+
+PL OurScheme project for the spring of 2013, Part 4 ("Project 4")
+
+Due : 6/20, 2013 (Thursday) before midnight
+
+// ===========================================================================
+
+For this project, you need to extend your OurScheme interpreter, so that
+it accepts the following function calls : create-error-object, error-object?,
+read, write, display-string, newline, eval and set!.
+
+Below is a description of these functions.
+
+  create-error-object
+  error-object?
+  
+    Add ERROR to your list of allowable data types, so that
+    there are not only INT, FLOAT, STRING, etc. but also ERROR.
+    
+    'create-error-object', a function that you should add to your system, 
+    accepts one argument which is a string, and returns an error-object.
+    
+    'error-object?' is a boolean, one-argument function that tests whether
+    the given argument is an error-object.
+    
+    An error-object "contains" a string (an appropriately phrased error 
+    message), and "behaves" just like a string-object.  There are only two 
+    differences between an error-object and a string-object.  One, while 
+    'error-object?' returns #t in the case of an error-object, it returns 
+    nil in the case of a string-object.  Two, while string-objects can be 
+    read in, error-objects cannot.  Error-objects can only be created by 
+    using 'create-error-object'.
+    
+  read
+  
+    'read' is the main input function.  It attempts to first read in the next
+    input S-expression and then return (the internal representation of) that 
+    S-expression.  'read' does not accept any argument.
+    
+    If there is any input error, 'read' returns an error-object.
+    The error message "contained" in this error-object will be the same as 
+    what ReadSExpression() would print or return if it is ReadSExpression() 
+    (and not 'read') that is doing the input.  (However, there will be
+    no "terminating line-enter character".)  Note that if the input error 
+    'read' encounters is end-of-file, the error-object that 'read' returns 
+    will contain the string :  
+    
+      ERROR : END-OF-FILE encountered when there should be more input
+     
+    Quick summary :
+    
+      'read', when called, returns one of two "things" :
+        (the internal representation of) a normal S-expression, or
+        an error-object that "contains" a string (an error message).
+      
+      An error-object behaves just like a string object.  It "contains"
+      an error message.  We can use 'error-object?' to see whether 
+      'read' returns an error-object.  And if what 'read' returns is
+      an error-object, we can also compare that error-object with
+      "ERROR : END-OF-FILE encountered when there should be more input"
+      to see whether the input error that 'read' encountered was an 
+      end-of-file error.
+    
+    Example :
+    
+      > (define a (read)) (1 2 3)
+      a defined
+      
+      > (error-object? a)
+      nil
+      
+      > a
+      ( 1
+        2
+        3
+      )
+    
+      > (define a (read))( 1 3 5 . 7 s )
+      a defined
+      
+      > (error-object? a)
+      #t
+      
+      > (equal? 
+         a 
+         "ERROR : END-OF-FILE encountered when there should be more input")
+      nil
+      
+      > a
+      "ERROR (unexpected character) : line 1 column 13 character 's'"
+      
+      ; Below cannot happen in the case of OurScheme, because we use the
+      ; same input stream for getting user input
+      ; (See 『中文補充說明之三：「哪個input字元是誰讀的？」』 below) ;
+      ; But if 'read' gets its input from some other place, the following
+      ; can happen ;
+      ;
+      ; > (define b (read)) ; suppose it is EOF in that "other place"
+      ; b defined
+      ; 
+      ; > (error-object? b)
+      ; #t
+      ; 
+      ; > (equal? 
+      ;    b 
+      ;    "ERROR : END-OF-FILE encountered when there should be more input")
+      ; #t
+      ; 
+      ; > b
+      ; "ERROR : END-OF-FILE encountered when there should be more input"
+      ; 
+      ; > (define c (read))
+      ; c defined
+      ; 
+      ; > (equal? 
+      ;    c
+      ;    "ERROR : END-OF-FILE encountered when there should be more input")
+      ; #t
+      ; 
+      ; > c
+      ; "ERROR : END-OF-FILE encountered when there should be more input"
+
+    When 'read' encounters an input error, it works in exactly the same 
+    way as how ReadSExpression() works.  For a detailed explanation of this,
+    see 「中文補充說明之二：'read'所應回傳的error message」 below.
+  
+  write
+  display-string
+  newline
+
+    There are three output functions: write, display-string, newline.
+    
+    'write' accepts one argument, and the argument should be (the internal
+    representation of) a legitimate S-expression.  'write' prints the given
+    argument in a way that is just like how PrintSExpression() works.
+    
+    While 'write' prints any STRING object with enclosing quotes printed,
+    display-string prints the same STRING object without printing the two
+    enclosing quotes.
+    
+    display-string 的(唯一)參數只能是string與error-object
+    // 因為名字叫'display-string'的關係
+    
+    'newline' just prints a line-enter character in the output.
+    
+    As for the return-values, 'write' returns its argument as the return-
+    value, 'display-string' also returns its argument as the return-value,
+    whereas 'newline' just returns nil.
+    
+    Example :
+    
+      > (write '(1 2 3))
+      ( 1
+        2
+        3
+      )( 1
+        2
+        3
+      )
+    
+      > (write "hi")
+      "hi""hi"
+      
+      > (display-string "hi")
+      hi"hi"
+      
+      > (display-string (write "hi"))
+      "hi"hi"hi"
+      
+      > (write (display-string "hi"))
+      hi"hi""hi"
+      
+      > (newline)
+      
+      nil
+      
+      > (begin (write "hi") (newline) (display-string "hi") (newline))
+      "hi"
+      hi
+      nil
+      
+      > (define a "hello")
+      a defined
+      
+      > (write (display-string a))
+      hello"hello""hello"
+      
+      > 
+  
+  eval
+  
+    'eval', which accepts one argument, evaluates the given (internal 
+    representation of an) S-expression. 
+    
+    Internally, 'eval' just amounts to calling EvalSExpression().
+    
+    Example :
+    
+    > '(car '(1 2 3))
+    ( car
+      ( quote
+        ( 1
+          2
+          3
+        )
+      )
+    )
+    
+    > (eval '(car '(1 2 3)))
+    1
+    
+    > (eval "Hi")
+    "Hi"
+    
+    > (eval '(fun '(1 2 3)))
+    ERROR (unbound symbol) : fun
+    
+    > (eval (fun '(1 2 3)))
+    ERROR (unbound symbol) : fun
+    
+    > (eval (car '( (cdr '(1 2 3)) 
+                    4 
+                    5
+                  )
+            )
+      )
+    ( 2
+      3
+    )
+
+  set!
+
+  除了'define', 'clean-environment', 'car', 'cdr', 'cons' 等primitive functions
+  之外，要再加一個'set!'指令。
+  
+  'set!'基本上是另一個版本的'define'，它接受兩個參數，第一個參數應該是個symbol，
+  不evaluate；第二個參數是任一個S-expression，要evaluate。
+  
+  以'(set! a '(1 2 3))'為例，這指令會把'a'這個symbol的binding設為'(1 2 3)'這個
+  list。
+  
+  'set!'與'define'的主要不同之處在於：
+  
+       (1) 'set!'有return值，而且此return值為nil。
+       (2) 'set!'可以出現在一個(我們要evaluate的)S-expression的任一level
+           ('define'只能出現在一個(我們要evaluate的)S-expression的top level)
+  
+  例：
+  
+    > (set! a '(1 2 3))
+    nil
+  
+    > a
+    ( 1
+      2
+      3
+    )
+  
+    > (cons (set! a '(4 5))
+            a
+      )
+    ( nil
+      4
+      5
+    )
+  
+    > a
+    ( 4
+      5
+    )
+  
+    >
+
+// ===========================================================================
+//
+// A more comprehensive example :
+//
+Welcome to OurScheme!
+
+> 
+(define (Factorial1 n)
+  ( if (= n 0)
+       1
+       (* n (Factorial1 (- n 1)))
+  )
+)
+Factorial1 defined
+
+> 
+(define (Factorial n)
+  (cond ( (< n 0) "Error! n less than 0."
+        )
+        ( (not (integer? n)) "Error! n not an integer."
+        )
+        ( #t (Factorial1 n) 
+        )
+  )
+)
+Factorial defined
+
+> (Factorial 5.5)
+"Error! n not an integer."
+
+> (Factorial -3)
+"Error! n less than 0."
+
+> (Factorial 5)
+120
+
+> (define (Test1)
+    (begin (display-string "Please enter a positive integer : ")
+           (Factorial (read))
+    )
+  )
+Test1 defined
+
+> (Test1)
+Please enter a positive integer : 8.75
+"Error! n not an integer."
+
+> (Test1)
+Please enter a positive integer : -.375
+"Error! n less than 0."
+
+> (Test 1)
+ERROR (unbound symbol) : Test
+
+> (Test1)
+Please enter a positive integer : 9
+362880
+
+> (Test1)
+Please enter a positive integer : (1 2 3)
+ERROR (< with incorrect argument type) : ( 1
+  2
+  3
+)
+
+> (define (Factorial n)
+    (cond ( (not (integer? n)) "Error! n not an integer."
+          )
+          ( (< n 0) "Error! n less than 0."
+          )
+          ( #t (Factorial1 n)
+          )
+    )
+  )
+Factorial defined
+
+> (Test1)
+Please enter a positive integer : (1 2 3)
+"Error! n not an integer."
+
+> (define (Factorial n)
+    (cond ( (not (integer? n)) 
+            (display-string "Parameter to 'Factorial' : ")
+            (write n)
+            (newline)
+            "Error! Not an integer!"
+          )
+          ( (< n 0) 
+            (display-string "Parameter to 'Factorial' : ")
+            (write n)
+            (newline)
+            "Error! Less than 0!"
+          )
+          ( #t (Factorial1 n)
+          )
+    )
+  )
+Factorial defined
+
+> (Factorial 8.75)
+Parameter to 'Factorial' : 8.750
+"Error! Not an integer!"
+
+> (Factorial (1 2 3))
+ERROR (attempt to apply non-function) : 1
+
+> (Factorial '(1 2 3))
+Parameter to 'Factorial' : ( 1
+  2
+  3
+)
+"Error! Not an integer!"
+
+> (Test1)
+Please enter a positive integer : (1 2 3)
+Parameter to 'Factorial' : ( 1
+  2
+  3
+)
+"Error! Not an integer!"
+
+> (eval (read))
+(car '(3 4 5))
+3
+
+> (eval (read))  (car '(3 4 5))
+3
+
+> (eval (begin (display-string "Please enter an S-expression to evaluate : ")
+               (read)
+        )
+  )
+Please enter an S-expression to evaluate : 
+(cons 1 
+      '(2 3)
+)
+( 1
+  2
+  3
+)
+
+> 
+(define (Factorial n)
+  (cond ( (not (integer? n)) 
+          ( create-error-object "Error! parameter not an integer." )
+        )
+        ( (< n 0) 
+          ( create-error-object "Error! parameter less than 0." )
+        )
+        ( #t
+          ( if (= n 0)
+             1
+             (* n (Factorial (- n 1)))
+          )
+        )
+  )
+)
+Factorial defined
+
+> 
+(define (Factorial_ n)
+  ( let ( ( answer ( Factorial n ) 
+          )
+        )
+        ( if ( error-object? answer )
+            (display-string answer)
+            answer
+        ) ; if
+  ) ; let
+) ; define
+Factorial_ defined
+
+> (Factorial_ 5.5)
+Error! parameter not an integer."Error! parameter not an integer."
+
+> (Factorial_ -3)
+Error! parameter less than 0."Error! parameter less than 0."
+
+> (Factorial_ 5)
+120
+
+> 
+  ( define (Test1)
+    (begin (display-string "Please enter a positive integer : ")
+           ( let ( ( input ( read ) )
+                 )
+                 ( if ( error-object? input )
+                     input 
+                     ( Factorial input )
+                 ) ; if
+           ) ; let
+    ) ; begin
+  ) ; define
+Test1 defined
+
+> (Test1)
+Please enter a positive integer : 8.75
+"Error! parameter not an integer."
+
+> (Test1)
+Please enter a positive integer : -.375
+"Error! parameter not an integer."
+
+> (Test1)
+Please enter a positive integer : -375
+"Error! parameter less than 0."
+
+> (Test1)
+Please enter a positive integer : 9
+362880
+
+> (Test1)
+Please enter a positive integer : (1 2 3)
+"Error! parameter not an integer."
+
+> (Test1)
+Please enter a positive integer : 
+( 1 
+  2 
+  . 
+  3 
+  . 
+  4
+)
+"ERROR (unexpected character) : line 6 column 3 character '.'"
+
+> 4
+
+> "ERROR (unexpected character) : line 1 column 1 character ')'"
+
+> (exit)
+
+Thanks for using OurScheme!
+
+// ===========================================================================
+
+補充說明之一：到底要做啥？
+
+
+  基本上，你要implement四個functions : read, write, eval, set!。
+  
+  但因為需要做"there is an input error"的判斷，所以需要有error-object?來配合
+  
+  read的運作；同時，光是write並不符合output的需求，所以還有display-string與
+  
+  newline。  另外，由於加入了error-object的概念，所以也一併加入了
+  
+  create-error-object這個function。算起來總共是要implement七個functions。
+  
+  
+  read基本上只是呼叫ReadSExpression()，write基本上只是呼叫PrintSExpression()，
+  
+  而eval基本上也只是呼叫EvalSExpression()。
+  
+  set!則是define的"孿生兄弟"。
+  
+  至於error-object?、create-error-object、display-string與newline，那應該佔不了多少程式碼。
+  
+  
+  也就是說，如果你的程式架構配置妥當，你將不需要加很多程式碼。
+  
+
+補充說明之二：'read'所應回傳的error message
+
+  ※ 基本上，(input) error的發生、在於'read'讀到"不該出現的字元"。
+     
+     當這狀況發生時，'read'應該知道此字元的line與column，
+     
+     從而產生error message如 :
+  
+       ERROR (unexpected character) : line 4 column 8 character '.'  
+  
+     但有一個狀況比較特殊(事實上有多種，我們只考慮這種)，那就是string
+     
+     還沒"close"就已出現LINE-ENTER。例： // 假設'('是column 1
+                                         // 第一行共18字元(不計LINE-ENTER)
+             ( cons "Hi" "How  
+                   are you" )
+     
+     此時error message是 :
+     
+     ERROR (unexpected character) : line 1 column 19 LINE-ENTER encountered
+  
+  ※ 一旦發生unexpected character錯誤，該行就完全skip，系統會把使用者的
+  
+     下一行視為之後的input。
+
+  ※ 由於是用input檔給input、而不是interactive I/O，所以有可能發生「使用者
+  
+     還沒input完一個S-expression就沒input了」的狀況，
+     
+     此時error message是 :
+     
+       ERROR : END-OF-FILE encountered when there should be more input
+
+
+補充說明之三：「哪個input字元是誰讀的？」
+
+  當系統(你的程式)在讀input時，有兩種可能：
+  
+    可能性之一：
+    
+      系統剛印了'> '，現在要讀入一個S-expression。
+      
+      當此S-expression被讀入之後，系統就會evaluate這個S-expression，
+      
+      並把所evaluate之結果印出來。
+      
+    可能性之二：
+    
+      系統(因為evaluate某段程式碼的關係、目前)正在執行'read'，所以現在要讀
+      
+      一個S-expression。此S-expression被讀入之後，就會被當作是系統evaluate 
+      
+      'read'所得之結果。
+      
+      
+      至於這個「系統evaluate 'read'所得之結果」在之後會被怎麼樣，這要看程式
+      
+      是怎麼寫的。
+      
+      
+      如果程式是'(define a (read))'，那麼「系統evaluate 'read'所得之結果」
+      
+      (亦即被讀入之S-expression)就會被設定為'a'這個symbol的binding。
+      
+      
+      如果程式是'(eval (read))'，那麼「系統evaluate 'read' 所得之結果」(亦即
+      
+      被讀入之S-expression)就會被當作是'eval'的參數(而被evaluate)。 也就是說，
+      
+          (eval (read))(car '(1 2 3))
+      
+      與
+      
+          (car '(1 2 3))
+      
+      會得到同樣的結果。
+   
+   
+   由於OurScheme有很清楚的token-separators的觀念，所以我們可以辨別
+   
+   「一個input字元到底是在『可能性之一』被讀入還是在『可能性之二』被讀入」。
+   
+   原則上，系統在讀入任一個S-expression之後(不管是『可能性之一』還是
+   
+   『可能性之二』)，下一次要讀入一個S-expression時、就是從「上一個
+   
+   S-expression的最後一個字元」的下一個字元開始process。
+   
+   
+   假設使用者在'> '之後enter : 
+   
+          (eval (read))(car '(1 2 3))(define b 5)
+   
+   那麼系統所讀入(並要evaluate)的S-expression就是'(eval (read))'，而
+   
+   當'(read)'被系統evaluate時，所讀入的S-expression就是從'(car ...'的
+   
+   '('開始process、從而導致'(car '(1 2 3))'被讀入，而下一個會被讀入
+   
+   的S-expression將會是'(define b 5)'。
+   
+   
+   假設使用者在'> '之後enter : 
+   
+          (eval (read))   (car '(1 2 3))   (define b 5)
+   
+   那麼當'(read)'被系統evaluate時，所讀入的S-expression就是從
+   
+   '(eval (read))'的最後一個')'之後的SPACE字元開始process，
+   
+   從而導致'(car '(1 2 3))'被讀入；而下一個會被讀入
+   
+   的S-expression依舊會是'(define b 5)'(而且是從'(car '(1 2 3))'的最後
+   
+   一個')'之後的SPACE字元開始process)。
+   
+
+補充說明之四：more on error-object
+
+   基本上，一個error-object 內含一個 string >>"..."<<。
+   To 'write' this error-object, output is >>"..."<<。
+   To 'display-string' this error-object, output is >>...<<。
+   
+   若在prompt level evaluate一個S-expression而得一error-object、
+   此error-object是以'write'的方式印出來。
+
+例：
+
+> (define a (create-error-object "This is an error!"))
+a defined
+
+> (error-object? a)
+#t
+
+> a
+"This is an error!"
+
+> (begin (write a) 5)
+"This is an error!"5
+
+> (begin (display-string a) 5)
+This is an error!5
+
+> (write a)
+"This is an error!""This is an error!"
+
+> (display-string a)
+This is an error!"This is an error!"
+
+> (car a)
+ERROR (car with incorrect argument type) : "This is an error!"
+
+> 
